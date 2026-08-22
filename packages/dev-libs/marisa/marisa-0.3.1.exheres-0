@@ -1,0 +1,16 @@
+require cmake \
+    github [ user=s-yata pn=marisa-trie tag=v${PV} ]
+SUMMARY="MARISA: Matching Algorithm with Recursively Implemented StorAge"
+HOMEPAGE="https://github.com/s-yata/marisa-trie"
+CMAKE_SOURCE="${WORKBASE}/marisa-trie-${PV}"
+LICENCES="BSD-2"
+SLOT="0"
+PLATFORMS="~amd64"
+MYOPTIONS=""
+
+DEPENDENCIES=""
+
+CMAKE_SRC_CONFIGURE_PARAMS+=(
+    -DBUILD_TESTING:BOOL=FALSE
+    -DENABLE_TOOLS:BOOL=FALSE
+)

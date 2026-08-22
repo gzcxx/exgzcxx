@@ -1,0 +1,17 @@
+require cmake \
+    github [ user=nlohmann pn=json tag=v${PV} ]
+SUMMARY="JSON for Modern C++"
+HOMEPAGE="https://github.com/nlohmann/json"
+CMAKE_SOURCE="${WORKBASE}/json-${PV}"
+LICENCES="MIT"
+SLOT="0"
+PLATFORMS="~amd64"
+MYOPTIONS=""
+
+DEPENDENCIES=""
+
+CMAKE_SRC_CONFIGURE_PARAMS+=(
+    -DJSON_MultipleHeaders:BOOL=TRUE
+    -DJSON_BuildTests:BOOL=FALSE
+)
+

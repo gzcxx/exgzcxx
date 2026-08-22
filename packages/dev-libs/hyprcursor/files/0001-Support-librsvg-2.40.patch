@@ -1,0 +1,49 @@
+--- a/libhyprcursor/hyprcursor.cpp
++++ b/libhyprcursor/hyprcursor.cpp
+@@ -564,14 +564,41 @@ bool CHyprcursorManager::loadThemeStyle(const SCursorStyleInfo& info) {
+                     return false;
+                 }
+ 
+-                RsvgRectangle rect = {0, 0, (double)PIXELSIDE, (double)PIXELSIDE};
+-
+-                if (!rsvg_handle_render_document(handle, PCAIRO, &rect, &error)) {
+-                    Debug::log(HC_LOG_ERR, logFn, "Failed rendering svg: {}", error->message);
++#if LIBRSVG_CHECK_VERSION(2, 46, 0)
++                 RsvgRectangle rect = {0, 0, (double)PIXELSIDE, (double)PIXELSIDE};
++
++                 if (!rsvg_handle_render_document(handle, PCAIRO, &rect, &error)) {
++                     g_object_unref(handle);
++                     return false;
++                 }
++#else
++                // librsvg < 2.46: no RsvgRectangle / rsvg_handle_render_document.
++                // Emulate the viewport by scaling the cairo CTM instead.
++                RsvgDimensionData dim;
++                rsvg_handle_get_dimensions(handle, &dim);
++
++                if (dim.width <= 0 || dim.height <= 0) {
++                    Debug::log(HC_LOG_ERR, logFn, "Failed rendering svg: bogus dimensions");
+                     g_object_unref(handle);
+                     return false;
+                 }
+ 
++                cairo_save(PCAIRO);
++
++                const double SCALE = std::min((double)PIXELSIDE / dim.width, (double)PIXELSIDE / dim.height);
++                cairo_translate(PCAIRO, (PIXELSIDE - dim.width * SCALE) / 2.0, (PIXELSIDE - dim.height * SCALE) / 2.0);
++                cairo_scale(PCAIRO, SCALE, SCALE);
++
++                const bool RENDERED = rsvg_handle_render_cairo(handle, PCAIRO);
++
++                cairo_restore(PCAIRO);
++
++                if (!RENDERED) {
++                    Debug::log(HC_LOG_ERR, logFn, "Failed rendering svg");
++                    g_object_unref(handle);
++                    return false;
++                }
++#endif
+                 // done
+                 cairo_surface_flush(newImage->cairoSurface);
+                 cairo_destroy(PCAIRO);
+

@@ -1,0 +1,27 @@
+require cmake \
+    github [ user=rime  tag=${PV} ]
+SUMMARY="Rime Input Method Engine, the core library"
+HOMEPAGE="https://rime.im/"
+CMAKE_SOURCE="${WORKBASE}/librime-${PV}"
+WORK="${WORKBASE}"/build
+LICENCES="BSD"
+SLOT="0"
+PLATFORMS="~amd64"
+MYOPTIONS=""
+
+DEPENDENCIES="
+    build+run:
+        dev-libs/boost
+        dev-db/leveldb
+        dev-libs/yaml-cpp
+        dev-cpp/glog
+        dev-libs/marisa
+        dev-libs/opencc
+"
+
+CMAKE_SRC_CONFIGURE_PARAMS+=(
+    -DBUILD_TEST:BOOL=FALSE
+    -DBUILD_MERGED_PLUGINS:BOOL=TRUE
+    -DENABLE_EXTERNAL_PLUGINS:BOOL=TRUE
+    -DENABLE_PRIVATE_HEADERS:BOOL=TRUE
+)

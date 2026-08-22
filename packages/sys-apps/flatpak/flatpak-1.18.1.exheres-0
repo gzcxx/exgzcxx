@@ -1,0 +1,144 @@
+# Copyright 2017 Marc-Antoine Perennou <keruspe@exherbo.org>
+# Copyright 2017 Rasmus Thomsen <Rasmus.thomsen@protonmail.com>
+# Distributed under the terms of the GNU General Public License v2
+
+require github [ suffix=tar.xz release=${PV} ]
+require python [ blacklist=2 multibuild=false ]
+require meson
+require test-dbus-daemon bash-completion zsh-completion
+require utf8-locale
+
+SUMMARY="Linux application sandboxing and distribution framework"
+HOMEPAGE="https://flatpak.org/"
+
+LICENCES="LGPL-2.1"
+SLOT="0"
+PLATFORMS="~amd64 ~armv8"
+MYOPTIONS="
+    fish-completion [[ description = [ Install completion files for the fish shell ] ]]
+    gobject-introspection
+    gtk-doc
+    wayland [[ description = [ Add support for Wayland security context ] ]]
+    ( providers: systemd )
+"
+
+DEPENDENCIES="
+    build:
+        app-text/docbook-xml-dtd:4.5
+        app-text/docbook-xsl-stylesheets
+        app-text/xmlto
+        dev-libs/libxslt
+        dev-python/pyparsing[python_abis:*(-)?]
+        sys-devel/bison
+        sys-devel/gettext[>=0.18.2]
+        virtual/pkg-config[>=0.24]
+        gtk-doc? ( dev-doc/gtk-doc )
+        wayland? ( sys-libs/wayland-protocols[>=1.32] )
+    build+run:
+        group/flatpak
+        user/flatpak
+        app-arch/libarchive[>=2.8.0]
+        app-arch/zstd[>=0.8.1]
+        app-crypt/gpgme:=[>=1.8.0]
+        core/json-glib
+        dev-libs/appstream:=[>=0.12.0]
+        dev-libs/glib:2[>=2.60][gobject-introspection(+)?]
+        dev-libs/libxml2:2.0[>=2.4]
+        gnome-desktop/dconf[>=0.26]
+        net-misc/curl[>=7.29.0]
+        sys-apps/bubblewrap[>=0.10.0]
+        sys-devel/libostree:1[>=2020.8]
+        sys-fs/fuse:3[>=3.1.1]
+        sys-libs/libcap
+        sys-libs/libseccomp
+        x11-libs/gdk-pixbuf:2.0
+        x11-libs/libXau
+        gobject-introspection? ( gnome-desktop/gobject-introspection:1[>=1.40.0] )
+        wayland? ( sys-libs/wayland[>=1.15] )
+    run:
+        sys-apps/xdg-dbus-proxy[>=0.1.0]
+"
+
+MESON_SRC_CONFIGURE_PARAMS=(
+    -Ddbus_config_dir=/usr/share/dbus-1/system.d
+    -Ddocdir=/usr/share/doc/${PNVR}
+    -Dsysusersdir=$(exhost --target)/lib/sysusers.d
+    -Dtmpfilesdir=$(exhost --target)/lib/tmpfiles.d
+    -Dsystemdsystemenvgendir=$(exhost --target)/lib/systemd/system-environment-generators
+    -Dsystemdsystemunitdir=$(exhost --target)/lib/systemd/system
+    -Dsystemduserenvgendir=$(exhost --target)/lib/systemd/user-environment-generators
+    -Dsystemduserunitdir=$(exhost --target)/lib/systemd/user
+    -Dauto_sideloading=false
+    -Ddconf=enabled
+    -Ddocbook_docs=enabled
+    -Dinstalled_tests=false
+    -Dinternal_checks=false
+    -Dinternal_tests=false
+    -Dlibzstd=enabled
+    -Dmalcontent=disabled
+    -Dman=enabled
+    -Dsandboxed_triggers=true
+    -Dseccomp=enabled
+    # Checks for /usr/share/selinux/devel/Makefile, no idea where that lives
+    -Dselinux_module=disabled
+    -Dsystem_bubblewrap=bwrap
+    -Dsystem_dbus_proxy=xdg-dbus-proxy
+    -Dsystem_fusermount=fusermount3
+    -Dsystem_helper=disabled
+    -Dxauth=enabled
+)
+# TODO: gdm_env_file, privileged_group, profile_dir
+
+MESON_SRC_CONFIGURE_OPTION_FEATURES=(
+    'gobject-introspection gir'
+    'gtk-doc gtkdoc'
+    'wayland wayland_security_context'
+)
+
+MESON_SRC_CONFIGURE_TESTS=(
+    '-Dtests=true -Dtests=false'
+)
+
+# testlibrary and test-libglnx-fdio fail due to sydbox
+RESTRICT="test"
+
+src_prepare() {
+    meson_src_prepare
+
+    # We don't have /usr/lib/locale/C.UTF8
+    edo sed "/lib\/locale/d" -i tests/make-test-runtime.sh
+
+    # Python isn't discovered by the build system and isn't used to invoke
+    # variant-schema-compiler directly, besides the shebang.
+    edo sed "/^#!\/usr\/bin\/env /s/python3/python$(python_get_abi)/" \
+        -i subprojects/variant-schema-compiler/variant-schema-compiler
+
+    # Respect selected python abi
+    edo sed \
+        -e "s:python3:python$(python_get_abi):g" \
+        -i meson.build
+}
+
+src_test() {
+    # for make-test-runtime.sh
+    require_utf8_locale
+
+    esandbox allow_net "unix:${TEMP%/}/test-flatpak-*/gpghome/S.gpg-agent*"
+    esandbox allow_net --connect "unix:${TEMP%/}/test-flatpak-*/gpghome/S.gpg-agent*"
+
+    test-dbus-daemon_run-tests meson_src_test
+
+    esandbox disallow_net "unix:${TEMP%/}/test-flatpak-*/gpghome/S.gpg-agent*"
+    esandbox disallow_net --connect "unix:${TEMP%/}/test-flatpak-*/gpghome/S.gpg-agent*"
+}
+
+src_install() {
+    meson_src_install
+
+    option bash-completion || edo rm -r "${IMAGE}"/usr/share/bash-completion
+    option fish-completion || edo rm -r "${IMAGE}"/usr/share/fish
+    option zsh-completion || edo rm -r "${IMAGE}"/usr/share/zsh
+
+    keepdir /var/lib/flatpak
+}
+

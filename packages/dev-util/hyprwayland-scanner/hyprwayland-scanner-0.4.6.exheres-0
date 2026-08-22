@@ -1,0 +1,18 @@
+# Copyright 2024 Maxime Sorin <maxime.sorin@clever-cloud.com>
+# Distributed under the terms of the GNU General Public License v2
+
+require github [ user='hyprwm' tag=v${PV} ] cmake
+
+SUMMARY="A Hyprland implementation of wayland-scanner, in and for C++"
+LICENCES="BSD-3"
+SLOT="0"
+PLATFORMS="~amd64"
+
+MYOPTIONS=""
+DEPENDENCIES="
+    build:
+        virtual/pkg-config
+    build+run:
+        dev-libs/pugixml
+"
+

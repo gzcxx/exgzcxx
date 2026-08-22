@@ -1,0 +1,47 @@
+require github [ user=beltoforion tag=v${PV} ] \
+    cmake
+
+SUMMARY="A fast math parser library for C/C++ with optional OpenMP support"
+DESCRIPTION="
+muParser is an extensible high performance math expression parser library. It
+transforms mathematical expressions given as strings into bytecode and evaluates
+them repeatedly at high speed, which makes it useful for applications where
+formulas have to be supplied by the user at runtime. Custom variables, constants,
+unary/binary/ternary operators and callback functions can be registered by the
+host application. Both a C++ class interface and a plain C interface are provided.
+"
+HOMEPAGE+=" https://beltoforion.de/en/muparser"
+
+UPSTREAM_DOCUMENTATION="https://beltoforion.de/en/muparser/ [[ lang = en ]]"
+UPSTREAM_CHANGELOG="https://github.com/beltoforion/muparser/blob/v${PV}/CHANGELOG"
+
+LICENCES="BSD-2"
+SLOT="0"
+PLATFORMS="~amd64 ~x86"
+MYOPTIONS="
+    openmp [[ description = [ Use OpenMP to evaluate expressions with multiple threads ] ]]
+    wide-char [[
+        description = [ Build with wide character (wchar_t) support instead of char.
+            This changes the ABI and API of the library, so all consumers have to
+            be built the same way ]
+    ]]
+"
+
+DEPENDENCIES=""
+
+CMAKE_SRC_CONFIGURE_PARAMS=(
+    -DBUILD_SHARED_LIBS:BOOL=TRUE
+    -DENABLE_SAMPLES:BOOL=FALSE
+)
+
+CMAKE_SRC_CONFIGURE_OPTION_ENABLES=(
+    'openmp OPENMP'
+    'wide-char WIDE_CHAR'
+)
+
+CMAKE_SRC_CONFIGURE_TESTS=(
+    '-DBUILD_TESTING:BOOL=TRUE'
+    '-DBUILD_TESTING:BOOL=FALSE'
+)
+
+DEFAULT_SRC_INSTALL_EXTRA_DOCS=( CHANGELOG Install.txt )

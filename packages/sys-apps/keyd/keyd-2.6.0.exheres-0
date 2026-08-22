@@ -1,0 +1,60 @@
+require github [ user=rvaiya tag=v${PV} ]
+
+SUMMARY="A key remapping daemon for linux."
+DESCRIPTION="
+Linux lacks a good key remapping solution. In order to achieve satisfactory results a
+medley of tools need to be employed (e.g xcape, xmodmap) with the end result often being
+tethered to a specified environment (X11). keyd attempts to solve this problem by providing
+a flexible system wide daemon which remaps keys using kernel level input primitives
+(evdev, uinput).
+"
+HOMEPAGE+=" https://github.com/rvaiya/keyd"
+
+LICENCES="MIT"
+SLOT="0"
+PLATFORMS="~amd64"
+MYOPTIONS="
+"
+
+DEPENDENCIES="
+    build:
+        sys-kernel/linux-headers
+    run:
+        group/keyd
+        user/keyd
+"
+
+src_prepare() {
+    default
+    edo sed -e '/-groupadd keyd/d' -i Makefile
+}
+ 
+src_compile() {
+    emake \
+        CC="$(exhost --tool-prefix)cc" \
+        PREFIX="/usr" \
+        CONFIG_DIR="/etc/keyd" \
+        VKBD="uinput"
+}
+ 
+src_install() {
+    emake \
+        DESTDIR="${IMAGE}" \
+        PREFIX="/usr" \
+        CONFIG_DIR="/etc/keyd" \
+        install
+ 
+    # Everything host dependent has to live under /usr/$(exhost --target).
+    # /usr/share is fine where it is and matches the compiled in DATA_DIR.
+    edo mkdir -p "${IMAGE}"/usr/$(exhost --target)
+    edo mv "${IMAGE}"/usr/bin "${IMAGE}"/usr/$(exhost --target)/
+
+    edo rm "${IMAGE}"/usr/$(exhost --target)/bin/keyd-application-mapper
+
+    edo mv "${IMAGE}"/usr/share/doc/${PN} "${IMAGE}"/usr/share/doc/${PNVR}
+ 
+    keepdir /etc/keyd
+}
+ 
+
+

@@ -1,0 +1,22 @@
+require cmake \
+    github [ user=BYVoid pn=OpenCC tag=ver.${PV} ]
+SUMMARY="Library for conversion between Traditional and Simplified Chinese"
+HOMEPAGE="https://opencc.byvoid.com/"
+CMAKE_SOURCE="${WORKBASE}/OpenCC-ver.${PV}"
+LICENCES="Apache-2.0"
+SLOT="0"
+PLATFORMS="~amd64"
+MYOPTIONS=""
+
+DEPENDENCIES="
+    build+run:
+        dev-db/leveldb
+"
+
+CMAKE_SRC_CONFIGURE_PARAMS+=(
+    -DBUILD_DOCUMENTATION:BOOL=FALSE
+    -DBUILD_PYTHON:BOOL=FALSE
+    -DENABLE_BENCHMARK:BOOL=FALSE
+    -DENABLE_GTEST:BOOL=FALSE
+    -DUSE_SYSTEM_MARISA:BOOL=FALSE
+)

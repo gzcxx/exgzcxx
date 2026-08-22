@@ -1,0 +1,20 @@
+require github [ user='hyprwm' tag=v${PV} ] cmake
+
+SUMMARY="The hyprland cursor format, library and utilities."
+LICENCES="BSD-3"
+SLOT="0"
+PLATFORMS="~amd64"
+DEFAULT_SRC_PREPARE_PATCHES=(
+	"${FILES}/0001-Support-librsvg-2.40.patch"
+)
+MYOPTIONS=""
+DEPENDENCIES="
+    build:
+        virtual/pkg-config
+    build+run:
+        dev-libs/hyprlang[>=0.4.2]
+        x11-libs/cairo
+        app-arch/libzip
+        dev-util/librsvg-ovnr
+        dev-cpp/tomlplusplus
+"

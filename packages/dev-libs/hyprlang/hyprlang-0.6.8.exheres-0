@@ -1,0 +1,14 @@
+require github [ user='hyprwm' tag=v${PV} ] cmake
+
+SUMMARY="The hypr configuration language is an extremely efficient, yet easy to work with, configuration language for linux applications."
+LICENCES="BSD-3"
+SLOT="0"
+PLATFORMS="~amd64"
+
+MYOPTIONS=""
+DEPENDENCIES="
+    build:
+        virtual/pkg-config
+    build+run:
+        dev-libs/hyprutils
+"

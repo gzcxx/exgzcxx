@@ -1,0 +1,25 @@
+require github [ user=CLIUtils tag=v${PV} ]
+require cmake
+
+SUMMARY="Command line parser for C++11"
+DESCRIPTION="
+CLI11 is a header-only command line parser for C++11 and beyond, providing a
+rich feature set with a simple and intuitive interface.
+"
+HOMEPAGE+=" https://cliutils.github.io/CLI11/book/"
+
+LICENCES="BSD-3"
+SLOT="0"
+PLATFORMS="~amd64 ~x86"
+MYOPTIONS=""
+
+DEPENDENCIES=""
+
+CMAKE_SRC_CONFIGURE_PARAMS=(
+    -DCLI11_BUILD_DOCS:BOOL=FALSE
+    -DCLI11_BUILD_EXAMPLES:BOOL=FALSE
+    -DCLI11_BUILD_TESTS:BOOL=FALSE
+    -DCLI11_INSTALL:BOOL=TRUE
+    -DCLI11_PRECOMPILED:BOOL=FALSE
+    -DCLI11_SINGLE_FILE:BOOL=FALSE
+)

@@ -1,0 +1,67 @@
+--- a/src/image/formats/Svg.cpp
++++ b/src/image/formats/Svg.cpp
+@@ -1,4 +1,5 @@
+ #include "Svg.hpp"
++#include <algorithm>
+ #include <filesystem>
+ #include <fstream>
+ #include <librsvg/rsvg.h>
+@@ -22,6 +23,35 @@
+     return trim(std::string((std::istreambuf_iterator<char>(file)), (std::istreambuf_iterator<char>())));
+ }
+ 
++// librsvg < 2.46 has neither RsvgRectangle nor rsvg_handle_render_document.
++// Emulate the viewport by scaling the cairo CTM before rendering instead.
++static bool renderSvgDocument(RsvgHandle* handle, cairo_t* cairo, const Vector2D& size) {
++#if LIBRSVG_CHECK_VERSION(2, 46, 0)
++    GError*       error = nullptr;
++    RsvgRectangle rect  = {0, 0, (double)size.x, (double)size.y};
++
++    return rsvg_handle_render_document(handle, cairo, &rect, &error);
++#else
++    RsvgDimensionData dim;
++    rsvg_handle_get_dimensions(handle, &dim);
++
++    if (dim.width <= 0 || dim.height <= 0)
++        return false;
++
++    cairo_save(cairo);
++
++    const double SCALE = std::min((double)size.x / dim.width, (double)size.y / dim.height);
++    cairo_translate(cairo, (size.x - dim.width * SCALE) / 2.0, (size.y - dim.height * SCALE) / 2.0);
++    cairo_scale(cairo, SCALE, SCALE);
++
++    const bool RENDERED = rsvg_handle_render_cairo(handle, cairo);
++
++    cairo_restore(cairo);
++
++    return RENDERED;
++#endif
++}
++
+ std::expected<cairo_surface_t*, std::string> SVG::createSurfaceFromSVG(const std::string& path, const Vector2D& size) {
+     if (!std::filesystem::exists(path))
+         return std::unexpected("loading svg: file doesn't exist");
+@@ -49,9 +79,7 @@
+     if (!handle)
+         return std::unexpected("loading svg: rsvg failed to read data");
+ 
+-    RsvgRectangle rect = {0, 0, (double)size.x, (double)size.y};
+-
+-    if (!rsvg_handle_render_document(handle, PCAIRO, &rect, &error))
++    if (!renderSvgDocument(handle, PCAIRO, size))
+         return std::unexpected("loading svg: rsvg failed to render");
+ 
+     // done
+@@ -82,9 +110,7 @@
+     if (!handle)
+         return std::unexpected("loading svg: rsvg failed to read data");
+ 
+-    RsvgRectangle rect = {0, 0, (double)size.x, (double)size.y};
+-
+-    if (!rsvg_handle_render_document(handle, PCAIRO, &rect, &error))
++    if (!renderSvgDocument(handle, PCAIRO, size))
+         return std::unexpected("loading svg: rsvg failed to render");
+ 
+     // done
+

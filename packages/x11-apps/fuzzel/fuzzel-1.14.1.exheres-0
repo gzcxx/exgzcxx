@@ -1,0 +1,30 @@
+
+require gogs [ prefix=http://codeberg.org user=dnkl tag=${PV} ]
+require meson
+
+SUMMARY="Fuzzel is a Wayland-native application launcher and fuzzy finder, inspired by rofi and dmenu."
+HOMEPAGE="https://codeberg.org/dnkl/fuzzel"
+LICENCES="MIT"
+PLATFORMS="~amd64"
+SLOT="0"
+MYOPTIONS=""
+DEPENDENCIES="
+    build+run:
+        media-libs/fcft
+        x11-libs/pixman
+        sys-libs/wayland
+        x11-libs/libxkbcommon
+    build:
+        sys-libs/wayland-protocols
+        sys-devel/ninja
+        dev-libs/tllist
+        app-doc/scdoc
+"
+
+MESON_SOURCE="${WORKBASE}/fuzzel"
+MESON_SRC_CONFIGURE_PARAMS=(
+    -Denable-cairo=disabled
+    -Dpng-backend=none
+    -Dsvg-backend=none
+    --prefix=/usr
+)

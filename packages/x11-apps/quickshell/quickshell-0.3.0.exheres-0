@@ -1,0 +1,159 @@
+require github [ user=quickshell-mirror pn=quickshell tag=v${PV} ]
+require cmake
+require flag-o-matic
+
+CMAKE_BUILD_DIR="${WORKBASE}"/build
+
+SUMMARY="Toolkit for building desktop widgets using QtQuick"
+DESCRIPTION="
+Quickshell is a toolkit for building status bars, notification daemons, lock
+screens, launchers and other desktop shell components with QtQuick, with live
+reloading of the QML source tree.
+"
+HOMEPAGE="https://quickshell.org/"
+
+LICENCES="LGPL-3"
+SLOT="0"
+PLATFORMS="~amd64"
+
+MYOPTIONS="
+    X [[ description = [ Build the X11 backend ] ]]
+    bluetooth [[ description = [ Bluetooth service via BlueZ ] ]]
+    greetd [[ description = [ greetd session launcher service ] ]]
+    jemalloc [[ description = [ Use jemalloc as the allocator ] ]]
+    mpris [[ description = [ MPRIS media player control service ] ]]
+    networkmanager [[ description = [ Network service via NetworkManager ] ]]
+    notifications [[ description = [ Freedesktop notification server service ] ]]
+    pam [[ description = [ PAM authentication service ] ]]
+    pipewire [[ description = [ PipeWire audio service ] ]]
+    policykit [[ description = [ PolicyKit agent service ] ]]
+    sockets [[ description = [ Unix socket support ] ]]
+    tray [[ description = [ StatusNotifierItem (system tray) service ] ]]
+    upower [[ description = [ Battery/power information via UPower ] ]]
+    wayland [[ description = [ Build the Wayland backend ] ]]
+
+    hyprland [[
+        description = [ Hyprland IPC, global shortcuts, focus grabs and surface extensions ]
+        requires = [ wayland ]
+    ]]
+    layer-shell [[
+        description = [ wlr-layer-shell support ]
+        requires = [ wayland ]
+    ]]
+    screencopy [[
+        description = [ Screencopy backends (ext-image-copy-capture, wlr, hyprland-toplevel) ]
+        requires = [ wayland ]
+    ]]
+    session-lock [[
+        description = [ ext-session-lock support ]
+        requires = [ wayland ]
+    ]]
+    toplevel-management [[
+        description = [ Foreign toplevel management support ]
+        requires = [ wayland ]
+    ]]
+"
+
+DEPENDENCIES="
+    build:
+        virtual/pkg-config
+        dev-cpp/CLI11
+        dev-lang/spirv-tools
+        x11-libs/qtshadertools:6
+        screencopy? ( sys-libs/vulkan-headers )
+        wayland? (
+            sys-libs/wayland-protocols
+        )
+    build+run:
+        x11-dri/libdrm
+        x11-libs/qtbase:6[gui][vulkan]
+        x11-libs/qtdeclarative:6
+        x11-libs/qtsvg:6
+        X? ( x11-libs/libxcb )
+        bluetooth? ( net-wireless/bluez )
+        jemalloc? ( dev-libs/jemalloc )
+        networkmanager? ( net-apps/NetworkManager )
+        pam? ( sys-libs/pam )
+        pipewire? ( media/pipewire )
+        policykit? (
+            sys-apps/polkit
+            dev-libs/glib:2
+        )
+        screencopy? ( x11-dri/mesa )
+        wayland? (
+            sys-libs/wayland
+            x11-libs/qtwayland:6
+        )
+"
+
+UPSTREAM_DOCUMENTATION="https://quickshell.org/docs/"
+UPSTREAM_CHANGELOG="https://quickshell.org/docs/v${PV}/"
+
+CMAKE_SRC_CONFIGURE_PARAMS=(
+    -GNinja
+    -DDISTRIBUTOR:STRING="Exherbo"
+    -DINSTALL_QML_PREFIX:STRING="lib/qt6/qml"
+)
+
+src_configure() {
+    if ${CC} -Wl,--version 2>/dev/null | grep -q "^mold" ; then
+        ewarn "mold is known to break quickshell at runtime, forcing GNU ld (bfd)"
+        append-ldflags -fuse-ld=bfd
+    fi
+
+    local hyprland=$(option hyprland TRUE FALSE)
+    local screencopy=$(option screencopy TRUE FALSE)
+    local i3=FALSE
+
+    CMAKE_SRC_CONFIGURE_PARAMS+=(
+        -DCRASH_HANDLER:BOOL=FALSE
+        -DUSE_JEMALLOC:BOOL=$(option jemalloc TRUE FALSE)
+        -DSOCKETS:BOOL=$(option sockets TRUE FALSE)
+
+        -DWAYLAND:BOOL=$(option wayland TRUE FALSE)
+        -DWAYLAND_WLR_LAYERSHELL:BOOL=$(option layer-shell TRUE FALSE)
+        -DWAYLAND_SESSION_LOCK:BOOL=$(option session-lock TRUE FALSE)
+        -DWAYLAND_TOPLEVEL_MANAGEMENT:BOOL=$(option toplevel-management TRUE FALSE)
+
+        -DHYPRLAND:BOOL=${hyprland}
+        -DHYPRLAND_IPC:BOOL=${hyprland}
+        -DHYPRLAND_GLOBAL_SHORTCUTS:BOOL=${hyprland}
+        -DHYPRLAND_FOCUS_GRAB:BOOL=${hyprland}
+        -DHYPRLAND_SURFACE_EXTENSIONS:BOOL=${hyprland}
+
+        -DSCREENCOPY:BOOL=${screencopy}
+        -DSCREENCOPY_ICC:BOOL=${screencopy}
+        -DSCREENCOPY_WLR:BOOL=${screencopy}
+        -DSCREENCOPY_HYPRLAND_TOPLEVEL:BOOL=${screencopy}
+
+        -DX11:BOOL=$(option X TRUE FALSE)
+        -DI3:BOOL=${i3}
+        -DI3_IPC:BOOL=${i3}
+
+        -DSERVICE_STATUS_NOTIFIER:BOOL=$(option tray TRUE FALSE)
+        -DSERVICE_PIPEWIRE:BOOL=$(option pipewire TRUE FALSE)
+        -DSERVICE_MPRIS:BOOL=$(option mpris TRUE FALSE)
+        -DSERVICE_PAM:BOOL=$(option pam TRUE FALSE)
+        -DSERVICE_POLKIT:BOOL=$(option policykit TRUE FALSE)
+        -DSERVICE_GREETD:BOOL=$(option greetd TRUE FALSE)
+        -DSERVICE_UPOWER:BOOL=$(option upower TRUE FALSE)
+        -DSERVICE_NOTIFICATIONS:BOOL=$(option notifications TRUE FALSE)
+
+        -DBLUETOOTH:BOOL=$(option bluetooth TRUE FALSE)
+        -DNETWORK:BOOL=$(option networkmanager TRUE FALSE)
+    )
+
+    cmake_src_configure
+}
+
+src_compile() {
+    edo cd "${CMAKE_BUILD_DIR}"
+    edo cmake --build . --parallel
+}
+
+src_install() {
+    edo cd "${CMAKE_BUILD_DIR}"
+    edo env DESTDIR="${IMAGE}" cmake --install .
+
+    emagicdocs
+}

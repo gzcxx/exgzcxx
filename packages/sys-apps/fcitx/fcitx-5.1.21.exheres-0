@@ -1,0 +1,48 @@
+require cmake
+
+SUMMARY="Next generation of fcitx, cross-platform input method framework"
+
+HOMEPAGE="https://fcitx-im.org/wiki/Fcitx_5"
+DOWNLOADS="https://download.fcitx-im.org/fcitx5/fcitx5/fcitx5-${PV}_dict.tar.zst -> ${PNV}.tar.zst"
+CMAKE_SOURCE="${WORKBASE}/fcitx5-${PV}"
+LICENCES="LGPL-2.1"
+SLOT="0"
+PLATFORMS="~amd64"
+MYOPTIONS=""
+
+DEPENDENCIES="
+    build:
+        kde-frameworks/extra-cmake-modules
+        virtual/pkg-config
+    build+run:
+        sys-libs/zlib
+        sys-libs/glibc
+        sys-apps/util-linux
+        sys-devel/gettext
+        dev-libs/fmt
+        dev-libs/expat
+        x11-libs/libxkbcommon
+        dev-cpp/nlohmann_json
+        app-text/iso-codes
+        x11-apps/xkeyboard-config
+        sys-libs/wayland
+        sys-libs/wayland-protocols
+        sys-apps/dbus
+        dev-libs/libuv
+        x11-libs/cairo
+        x11-libs/pango
+        x11-libs/gdk-pixbuf
+        dev-libs/glib
+"
+
+CMAKE_SRC_CONFIGURE_PARAMS+=(
+    -DENABLE_TESTING_ADDONS:BOOL=FALSE
+    -DENABLE_TEST:BOOL=FALSE
+    -DENABLE_ENCHANT:BOOL=FALSE
+    -DENABLE_X11:BOOL=FALSE
+    -DENABLE_WAYLAND:BOOL=TRUE
+    -DUSE_SYSTEM_PLASMA_WAYLAND_PROTOCOLS:BOOL=FALSE
+    -DENABLE_DBUS:BOOL=TRUE
+    -DUSE_SYSTEMD:BOOL=FALSE
+)
+

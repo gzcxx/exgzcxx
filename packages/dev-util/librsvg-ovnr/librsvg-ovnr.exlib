@@ -1,0 +1,73 @@
+# Copyright 2010 Saleem Abdulrasool <compnerd@compnerd.org>
+# Copyright 2011 Brett Witherspoon <spoonb@exherbo.org>
+# Distributed under the terms of the GNU General Public License v2
+
+require autotools [ supported_autoconf=[ 2.5 ] supported_automake=[ 1.15 ] ]
+
+export_exlib_phases src_configure pkg_postinst pkg_postrm
+
+SUMMARY="SVG parsing library old version (no rust)"
+HOMEPAGE="http://live.gnome.org/LibRsvg"
+DOWNLOADS="https://download.gnome.org/sources/librsvg/2.40/librsvg-2.40.10.tar.xz -> librsvg-ovnr-2.40.10.tar.xz"
+LICENCES="LGPL-2"
+SLOT=2
+WORK="${WORKBASE}/librsvg-2.40.10"
+
+MYOPTIONS="
+    gobject-introspection
+    gtk-doc
+    viewer [[ description = [ GTK+3-based SVG viewer ] ]]
+"
+
+DEPENDENCIES="
+    build:
+        virtual/pkg-config[>=0.18]
+        gnome-desktop/gobject-introspection:1 [[ note = [ for m4 ] ]]
+        gtk-doc? ( dev-doc/gtk-doc[>=1.13] )
+    build+run:
+        !gnome-desktop/librsvg [[
+            description = [ Both packages install the same files (librsvg-2.so, the rsvg gdk-pixbuf loader, rsvg-convert) ]
+            resolution = uninstall-blocked-before
+        ]]
+        dev-libs/glib:2[>=2.24.0]
+        dev-libs/libcroco[>=0.6.1]
+        dev-libs/libxml2:2.0[>=2.7]
+        x11-libs/cairo[>=1.2.0]
+        x11-libs/gdk-pixbuf:2.0[>=2.20][gobject-introspection?]
+        x11-libs/pango[>=1.32.6]
+        gobject-introspection? ( gnome-desktop/gobject-introspection:1[>=0.10.8] )
+        viewer? ( x11-libs/gtk+:3[>=3.10.0] )
+"
+
+DEFAULT_SRC_PREPARE_PATCHES=(
+    # TODO(sardemff7) Submit upstream
+    "${FILES}"/0001-Allow-to-force-disable-the-GTK-3-dependency.patch
+)
+
+DEFAULT_SRC_CONFIGURE_PARAMS=(
+    --disable-tools
+    --disable-vala # requires access to dbus in src_compile
+)
+
+DEFAULT_SRC_CONFIGURE_OPTION_ENABLES=(
+    'gobject-introspection introspection'
+    'gtk-doc'
+    viewer
+)
+
+librsvg-ovnr_src_configure() {
+    export CFLAGS+=" -Wno-error=incompatible-pointer-types -Wno-error=implicit-function-declaration -Wno-error=int-conversion"
+    default
+}
+
+librsvg-ovnr_pkg_postinst() {
+    echo "Generating pixbuf loader list ..."
+    nonfatal edo gdk-pixbuf-query-loaders --update-cache || ewarn "Querying pixbuf loaders failed"
+}
+
+librsvg-ovnr_pkg_postrm() {
+    echo "Generating pixbuf loader list ..."
+    nonfatal edo gdk-pixbuf-query-loaders --update-cache || ewarn "Querying pixbuf loaders failed"
+}
+
+

@@ -1,0 +1,27 @@
+require cmake
+
+SUMMARY="Next generation of fcitx, cross-platform input method framework"
+
+HOMEPAGE="https://fcitx-im.org/wiki/Fcitx_5"
+DOWNLOADS="https://download.fcitx-im.org/fcitx5/fcitx5-rime/fcitx5-rime-${PV}.tar.zst -> ${PNV}.tar.zst"
+CMAKE_SOURCE="${WORKBASE}/fcitx5-rime-${PV}"
+WORK="${WORKBASE}/build"
+LICENCES="LGPL-2.1"
+SLOT="0"
+PLATFORMS="~amd64"
+MYOPTIONS=""
+
+DEPENDENCIES="
+    build:
+        kde-frameworks/extra-cmake-modules
+        virtual/pkg-config
+    build+run:
+        sys-apps/fcitx
+        sys-devel/gettext
+        dev-libs/librime
+"
+
+CMAKE_SRC_CONFIGURE_PARAMS+=(
+    -DRIME_DATA_DIR=/usr/share/rime-data/
+)
+

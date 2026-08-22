@@ -1,0 +1,100 @@
+# Copyright 2009 Saleem Abdulrasool <compnerd@compnerd.org>
+# Distributed under the terms of the GNU General Purpose License v2
+
+require bash-completion
+require meson
+
+export_exlib_phases src_prepare src_test
+
+SUMMARY="A multimedia framework with a plugin based architecture"
+HOMEPAGE="https://${PN}.freedesktop.org"
+DOWNLOADS="${HOMEPAGE}/src/${PN}/${PNV}.tar.xz"
+
+LICENCES="LGPL-2"
+SLOT="1.0"
+MYOPTIONS="
+    backtrace [[ description = [ Generate backtraces using elfutils and libunwind ] ]]
+    debug
+    gobject-introspection
+    ( libc: musl )
+"
+
+# Test run against / instead of $WORK, which makes them somewhat pointless
+RESTRICT="test"
+
+DEPENDENCIES="
+    build:
+        gobject-introspection? ( gnome-desktop/gobject-introspection:1[>=1.31.1] )
+    build+run:
+        dev-libs/glib:2[>=2.64.0][gobject-introspection(+)?]
+        sys-libs/libcap
+        backtrace? (
+            dev-libs/libunwind
+            dev-util/elfutils
+            libc:musl? ( dev-libs/libexecinfo )
+        )
+    post:
+        app-admin/eclectic-gstreamer:${SLOT}
+"
+
+MESON_SRC_CONFIGURE_PARAMS=(
+    -Dbenchmarks=disabled
+    -Dcheck=enabled
+    -Dcoretracers=enabled
+    -Ddoc=disabled
+    -Dexamples=disabled
+    -Dextra-checks=enabled
+    -Dglib_assert=false
+    -Dglib_checks=false
+    -Dglib_debug=disabled
+    -Dgst_parse=true
+    -Dgstreamer-static-full=false
+    -Dmemory-alignment=malloc
+    -Dnls=enabled
+    -Doption-parsing=true
+    -Dpoisoning=true
+    -Dptp-helper=disabled
+    -Dregistry=true
+    -Dtests=enabled
+    -Dtools=enabled
+    -Dtracer_hooks=true
+)
+
+MESON_SRC_CONFIGURE_OPTION_SWITCHES=(
+    'debug gst_debug'
+)
+
+MESON_SRC_CONFIGURE_OPTION_FEATURES=(
+    'backtrace libdw'
+    'backtrace libunwind'
+    'bash-completion'
+    'gobject-introspection introspection'
+)
+
+# Needed for async tests
+DEFAULT_SRC_TEST_PARAMS=( -j1 )
+
+gstreamer_src_prepare() {
+    meson_src_prepare
+
+    # Test timeout expired
+    edo sed -i -e '/tcase_add_test.*test_notify_race/d' tests/check/elements/fakesink.c
+    edo sed -i -e '/tcase_add_test.*test_simple_shutdown_while_running_ring/d'                      \
+               -e '/tcase_add_test.*test_simple_shutdown_while_running_ringbuffer/d'                \
+            tests/check/elements/queue2.c
+
+    # don't bind to 0.0.0.0
+    edo sed -i -e '/net_time_provider_new/s/NULL/"127.0.0.1"/' tests/check/libs/gstnettimeprovider.c
+    edo sed -e '/tcase_add_test (tc_chain, test_instantiation)/d' -i tests/check/libs/gstnetclientclock.c
+    edo sed -e '/tcase_add_test (tc_chain, test_functioning)/d' -i tests/check/libs/gstnetclientclock.c
+}
+
+gstreamer_src_test() {
+    # needed for GstNetClientClock tests
+    esandbox allow_net --connect "inet:127.0.0.1@1024-65535"
+
+    meson_src_test
+
+    esandbox disallow_net --connect "inet:127.0.0.1@1024-65535"
+}
+
