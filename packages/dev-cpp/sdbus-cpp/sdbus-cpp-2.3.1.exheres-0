@@ -1,0 +1,27 @@
+require github [ user="Kistler-Group" tag=v${PV} ]
+require cmake
+
+SUMMARY="High-level C++ D-Bus library for Linux designed to provide easy-to-use yet powerful API in modern C++"
+HOMEPAGE="https://github.com/Kistler-Group/sdbus-cpp"
+LICENCES="LGPL-2.1"
+SLOT="0"
+PLATFORMS="~amd64"
+
+MYOPTIONS="
+"
+
+DEPENDENCIES="
+    build:
+        virtual/pkg-config
+    build+run:
+        sys-libs/basu
+        
+"
+CMAKE_SRC_CONFIGURE_PARAMS+=(
+    -DSDBUSCPP_BUILD_CODEGEN:BOOL=FALSE
+    -DSDBUSCPP_BUILD_DOCS:BOOL=FALSE
+    -DSDBUSCPP_BUILD_TESTS:BOOL=FALSE
+    -DSDBUSCPP_BUILD_EXAMPLES:BOOL=FALSE
+    -DSDBUSCPP_BUILD_LIBSYSTEMD:BOOL=FALSE
+    -DSDBUSCPP_SDBUS_LIB:STRING=basu
+)

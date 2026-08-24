@@ -1,0 +1,29 @@
+require github [ user="hyprwm" tag=v${PV} ]
+require cmake
+
+SUMMARY="xdg-desktop-portal backend for Hyprland"
+HOMEPAGE="https://github.com/hyprwm/xdg-desktop-portal-hyprland"
+LICENCES="BSD-3"
+SLOT="0"
+PLATFORMS="~amd64"
+
+MYOPTIONS="
+    jemalloc
+"
+
+DEPENDENCIES="
+    build:
+        virtual/pkg-config
+    build+run:
+        x11-dri/mesa
+        jemalloc? ( dev-libs/jemalloc )
+        dev-libs/hyprlang
+        dev-libs/hyprutils
+        dev-util/hyprwayland-scanner
+        dev-libs/hyprland-protocols
+        x11-dri/libdrm
+        media/pipewire
+        dev-cpp/sdbus-cpp
+        sys-libs/wayland-protocols
+        sys-libs/wayland        
+"

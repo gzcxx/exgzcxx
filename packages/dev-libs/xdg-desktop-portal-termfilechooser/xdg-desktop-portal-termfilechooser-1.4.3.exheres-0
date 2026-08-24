@@ -1,0 +1,21 @@
+require github [ user="hunkyburrito" tag=v${PV} ]
+require meson
+
+SUMMARY="xdg-desktop-portal backend for choosing files with your favorite file chooser"
+HOMEPAGE="https://github.com/hunkyburrito/xdg-desktop-portal-termfilechooser"
+LICENCES="MIT"
+SLOT="0"
+PLATFORMS="~amd64"
+
+MYOPTIONS="
+"
+
+DEPENDENCIES="
+    build:
+        virtual/pkg-config
+    build+run:
+        dev-libs/inih
+        sys-libs/basu
+        sys-apps/xdg-desktop-portal
+        app-doc/scdoc
+"

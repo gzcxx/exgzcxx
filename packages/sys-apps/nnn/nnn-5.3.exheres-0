@@ -1,0 +1,11 @@
+require github [ user=jarun tag=v${PV} ]
+
+SUMMARY="nnn The unorthodox terminal file manager"
+HOMEPAGE="https://github.com/jarun/nnn"
+LICENCES="BSD-2"
+SLOT="0"
+PLATFORMS="~amd64"
+
+DEFAULT_SRC_INSTALL_PARAMS=(
+    PREFIX=/usr/$(exhost --target)
+)
