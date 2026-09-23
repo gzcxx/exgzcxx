@@ -1,0 +1,42 @@
+# Copyright 2023 Heiko Becker <heirecka@exherbo.org>
+# Distributed under the terms of the GNU General Public License v2
+
+MY_PN=${PN/-/_}
+MY_PNV=${MY_PN}-${PV}
+
+require pypi
+require py-pep517 [ backend=self-hosted test=pytest work=${MY_PNV} ]
+
+SUMMARY="Meson PEP 517 Python build backend "
+DESCRIPTION="
+A Python build backend built on top of the Meson build-system. It enables you
+to use Meson for your Python packages."
+
+LICENCES="MIT"
+SLOT="0"
+PLATFORMS="~amd64 ~armv8"
+MYOPTIONS=""
+
+DEPENDENCIES="
+    build+run:
+        dev-python/pyproject-metadata[>=0.9.0][python_abis:*(-)?]
+        dev-python/packaging[>=23.2][python_abis:*(-)?]
+        sys-devel/meson[>=0.64.0][python_abis:*(-)?]
+        python_abis:3.9? ( dev-python/tomli[>=1.0.0][python_abis:3.9] )
+        python_abis:3.10? ( dev-python/tomli[>=1.0.0][python_abis:3.10] )
+        python_abis:3.12? ( sys-devel/meson[>=1.2.3][python_abis:3.12] )
+        python_abis:3.13? ( sys-devel/meson[>=1.2.3][python_abis:3.13] )
+    test:
+        dev-python/build[python_abis:*(-)?]
+        dev-python/Cython[python_abis:*(-)?]
+        dev-python/pytest-mock[python_abis:*(-)?]
+        dev-python/wheel[python_abis:*(-)?]
+        dev-util/patchelf
+"
+
+PYTEST_SKIP=(
+    # Both tests want to use pip to download and install meson_python
+    test_pep518[sdist_to_wheel-purelib-and-platlib]
+    test_pep518[wheel_directly-purelib-and-platlib]
+)
+
