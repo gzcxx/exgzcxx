@@ -1,0 +1,8 @@
+# Copyright 2015-2018 Johannes Nixdorf <mixi@exherbo.org>
+# Copyright 2013 Michael Forney
+# Distributed under the terms of the GNU General Public License v2
+
+require skalibs
+
+PLATFORMS="~amd64 ~armv7"
+

@@ -1,0 +1,8 @@
+#!/bin/sh -e
+
+if [ -x /etc/s6-linux-init/scripts/rc.shutdown ]; then
+    exec /etc/s6-linux-init/scripts/rc.shutdown "${@}"
+else
+    exec /usr/libexec/s6-linux-init/scripts.default/rc.shutdown "${@}"
+fi
+

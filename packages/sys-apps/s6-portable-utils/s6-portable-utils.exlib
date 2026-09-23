@@ -1,0 +1,55 @@
+# Copyright 2015-2019 Johannes Nixdorf <mixi@exherbo.org>
+# Copyright 2014 Konstantinn Bonnet <qu7uux@gmail.com>
+# Distributed under the terms of the GNU General Public License v2
+
+export_exlib_phases src_configure src_install
+
+SUMMARY="s6-linux-utils is a set of minimalistic Linux-specific system utilities"
+HOMEPAGE="http://skarnet.org/software/s6-portable-utils/"
+
+if ever is_scm; then
+    SCM_REPOSITORY="git://git.skarnet.org/s6-portable-utils"
+    SCM_BRANCH=main
+    require scm-git
+else
+    DOWNLOADS="http://skarnet.org/software/${PN}/${PNV}.tar.gz"
+fi
+
+LICENCES="ISC"
+SLOT="0"
+MYOPTIONS="
+    static
+"
+
+DEPENDENCIES=""
+
+DEFAULT_SRC_COMPILE_PARAMS=(
+    CROSS_COMPILE=$(exhost --tool-prefix)
+)
+
+s6-portable-utils_src_configure()
+{
+    local args=(
+        --disable-rpath
+        --enable-shared
+        --enable-pkgconfig
+        --with-lib=/usr/$(exhost --target)/lib
+        --with-dynlib=/usr/$(exhost --target)/lib
+        --with-pkgconfig
+        $(option_enable static allstatic)
+    )
+
+    [[ $(exhost --target) == *-gnu* ]] || \
+        args+=( $(option_enable static static-libc) )
+
+    econf "${args[@]}"
+}
+
+s6-portable-utils_src_install()
+{
+    default
+
+    insinto /usr/share/doc/${PNVR}/html
+    doins doc/*
+}
+

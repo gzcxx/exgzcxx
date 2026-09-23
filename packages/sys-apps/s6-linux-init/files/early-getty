@@ -1,0 +1,8 @@
+#!/bin/sh -e
+
+if [ -x /etc/s6-linux-init/bin/early-getty ]; then
+    exec /etc/s6-linux-init/bin/early-getty "${@}"
+else
+    exec /usr/libexec/s6-linux-init/bin/early-getty.default "${@}"
+fi
+

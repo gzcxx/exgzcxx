@@ -1,0 +1,7 @@
+#!/bin/sh -e
+
+if [ -x /etc/s6-linux-init/scripts/runlevel ]; then
+    exec /etc/s6-linux-init/scripts/runlevel "${@}"
+else
+    exec /usr/libexec/s6-linux-init/scripts.default/runlevel "${@}"
+fi

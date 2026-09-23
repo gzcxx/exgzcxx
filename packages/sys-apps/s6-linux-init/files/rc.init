@@ -1,0 +1,7 @@
+#!/bin/sh -e
+
+if [ -x /etc/s6-linux-init/scripts/rc.init ]; then
+    exec /etc/s6-linux-init/scripts/rc.init "${@}"
+else
+    exec /usr/libexec/s6-linux-init/scripts.default/rc.init "${@}"
+fi

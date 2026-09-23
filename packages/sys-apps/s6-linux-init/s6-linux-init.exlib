@@ -1,0 +1,118 @@
+# Copyright 2016-2019 Johannes Nixdorf <mixi@exherbo.org>
+# Distributed under the terms of the GNU General Public License v2
+
+require alternatives
+
+export_exlib_phases src_prepare src_configure src_install pkg_postinst pkg_prerm
+
+SUMMARY="A set of minimalistic tools to create a s6-based init system, including a /sbin/init binary, on a Linux kernel."
+HOMEPAGE="http://skarnet.org/software/${PN}/"
+
+if ever is_scm; then
+    SCM_REPOSITORY="git://git.skarnet.org/s6-linux-init"
+    SCM_BRANCH=main
+    require scm-git
+else
+    DOWNLOADS="http://skarnet.org/software/${PN}/${PNV}.tar.gz"
+fi
+
+LICENCES="ISC"
+SLOT="0"
+MYOPTIONS="
+    static
+"
+
+DEPENDENCIES="
+    run:
+        user/s6-log
+"
+
+DEFAULT_SRC_COMPILE_PARAMS=(
+    CROSS_COMPILE=$(exhost --tool-prefix)
+)
+
+s6-linux-init_src_prepare()
+{
+    default
+
+    edo sed 's/0700/0755/g' -i package/modes
+}
+
+s6-linux-init_src_configure()
+{
+    local args=(
+        --disable-rpath
+        --enable-pkgconfig
+        --enable-shared
+        --with-lib=/usr/$(exhost --target)/lib
+        --with-dynlib=/usr/$(exhost --target)/lib
+        --with-pkgconfig
+        --skeldir=/usr/share/s6-linux-init/skel
+        $(option_enable static allstatic)
+    )
+
+    [[ $(exhost --target) == *-gnu* ]] || \
+        args+=( $(option_enable static static-libc) )
+
+    econf "${args[@]}"
+}
+
+s6-linux-init_src_install()
+{
+    default
+
+    dodir /usr/$(exhost --target)/libexec
+    edo ./s6-linux-init-maker \
+        -1 \
+        -c /usr/$(exhost --target)/libexec/s6-linux-init \
+        -u s6-log \
+        -G "/usr/libexec/s6-linux-init/bin/early-getty" \
+        -p "/usr/local/bin:/usr/host/bin:/opt/bin" \
+        -s "/run/kenv" \
+        -e "TERM=linux" \
+        -f "./skel" \
+        "${IMAGE}"/usr/$(exhost --target)/libexec/s6-linux-init
+
+    keepdir /usr/$(exhost --target)/libexec/s6-linux-init/run-image/uncaught-logs
+    edo rm "${IMAGE}"/usr/$(exhost --target)/libexec/s6-linux-init/run-image/service/{s6-linux-init-shutdownd,s6-svscan-log}/fifo
+
+    local a alternatives=()
+
+    for a in init halt poweroff reboot shutdown telinit; do
+        alternatives+=(
+            /usr/$(exhost --target)/bin/${a} /usr/$(exhost --target)/libexec/s6-linux-init/bin/${a}
+        )
+    done
+
+    alternatives_for init ${PN} 500 "${alternatives[@]}"
+
+    insinto /usr/share/doc/${PNVR}/html
+    doins doc/*
+
+    insopts -m755
+
+    insinto /usr/$(exhost --target)/libexec/s6-linux-init/scripts
+    doins "${FILES}"/{rc.init,rc.shutdown,runlevel}
+
+    insinto /usr/$(exhost --target)/libexec/s6-linux-init/bin
+    doins "${FILES}"/early-getty{,.default}
+
+    keepdir /etc/s6-linux-init/scripts
+}
+
+s6-linux-init_pkg_postinst() {
+    alternatives_pkg_postinst
+
+    # Paludis can't merge a fifo (Cannot write '/var/tmp/paludis/build/.../s6-svscan-log/fifo'
+    # to '/.../s6-svscan-log' because it is not a recognised file type).
+    mkfifo "${ROOT}"/usr/$(exhost --target)/libexec/s6-linux-init/run-image/service/{s6-linux-init-shutdownd,s6-svscan-log}/fifo
+
+    # owner fixup
+    nonfatal edo chown s6-log:s6-log "${ROOT}"/usr/$(exhost --target)/libexec/s6-linux-init/run-image/uncaught-logs
+}
+
+s6-linux-init_pkg_prerm() {
+    alternatives_pkg_prerm
+
+    rm "${ROOT}"/usr/$(exhost --target)/libexec/s6-linux-init/run-image/service/{s6-linux-init-shutdownd,s6-svscan-log}/fifo
+}

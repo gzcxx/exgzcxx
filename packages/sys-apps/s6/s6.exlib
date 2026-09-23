@@ -1,0 +1,69 @@
+# Copyright 2015-2019 Johannes Nixdorf <mixi@exherbo.org>
+# Copyright 2013 Michael Forney
+# Distributed under the terms of the GNU General Public License v2
+
+require flag-o-matic
+
+export_exlib_phases src_prepare src_configure src_install
+
+SUMMARY="s6 is a small suite of process supervision programs"
+HOMEPAGE="http://skarnet.org/software/${PN}/"
+
+if ever is_scm; then
+    SCM_REPOSITORY="git://git.skarnet.org/s6"
+    SCM_BRANCH=main
+    require scm-git
+else
+    DOWNLOADS="http://skarnet.org/software/${PN}/${PNV}.tar.gz"
+fi
+
+LICENCES="ISC"
+SLOT="0"
+MYOPTIONS="
+    nsss [[ description = [ Use the nsss library for user database lookups ] ]]
+    static
+"
+
+DEPENDENCIES=""
+
+DEFAULT_SRC_COMPILE_PARAMS=(
+    CROSS_COMPILE=$(exhost --tool-prefix)
+)
+
+s6_src_prepare()
+{
+    default
+
+    edo sed 's/0700/0755/g' -i package/modes
+}
+
+s6_src_configure()
+{
+    optionq nsss && append-flags -I/usr/$(exhost --target)/include/nsss
+
+    local args=(
+        --disable-rpath
+        --enable-execline
+        --enable-pkgconfig
+        --enable-shared
+        --with-lib=/usr/$(exhost --target)/lib
+        --with-dynlib=/usr/$(exhost --target)/lib
+        --with-pkgconfig
+        $(option_enable nsss)
+        $(option_enable static allstatic)
+    )
+
+    [[ $(exhost --target) == *-gnu* ]] || \
+        args+=( $(option_enable static static-libc) )
+
+    econf "${args[@]}"
+}
+
+s6_src_install()
+{
+    default
+
+    insinto /usr/share/doc/${PNVR}/html
+    doins -r doc/*
+}
+

@@ -1,0 +1,14 @@
+# Copyright 2015-2018 Johannes Nixdorf <mixi@exherbo.org>
+# Distributed under the terms of the GNU General Public License v2
+
+require s6-rc
+
+PLATFORMS="~amd64 ~armv7 ~armv8"
+
+DEPENDENCIES="
+    build+run:
+        dev-lang/execline[>=2.9.9.2]
+        dev-libs/skalibs[>=2.15.1.0]
+        sys-apps/s6[>=2.15.1.0]
+"
+

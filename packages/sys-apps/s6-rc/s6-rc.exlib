@@ -1,0 +1,115 @@
+# Copyright 2015-2019 Johannes Nixdorf <mixi@exherbo.org>
+# Distributed under the terms of the GNU General Public License v2
+
+require alternatives
+
+export_exlib_phases src_configure src_install pkg_postinst
+
+SUMMARY="A dependency-based init script management system"
+DESCRIPTION="
+s6-rc is a suite of programs designed to help Unix distributions manage
+services provided by various software packages, and automate initialization,
+shutdown, and more generally changes to the machine state.
+
+It keeps track of the complete service dependency tree and automatically
+brings services up or down to reach the desired state.
+
+In conjunction with s6, it ensures that long-lived services are
+supervised, and that short-lived instructions are run in a reproducible
+manner.
+"
+HOMEPAGE="http://skarnet.org/software/${PN}/"
+
+if ever is_scm; then
+    SCM_REPOSITORY="git://git.skarnet.org/s6-rc"
+    SCM_BRANCH=main
+    require scm-git
+else
+    DOWNLOADS="http://skarnet.org/software/${PN}/${PNV}.tar.gz"
+fi
+
+LICENCES="ISC"
+SLOT="0"
+MYOPTIONS="
+    static
+"
+
+DEPENDENCIES=""
+
+DEFAULT_SRC_COMPILE_PARAMS=(
+    CROSS_COMPILE=$(exhost --tool-prefix)
+)
+
+s6-rc_src_configure()
+{
+    local args=(
+        # not under the pre 0.6.0.0 path for easier transition
+        --bootdb=/etc/s6-rc/bootdb/current
+        --disable-rpath
+        --enable-pkgconfig
+        --enable-shared
+        --with-lib=/usr/$(exhost --target)/lib
+        --with-dynlib=/usr/$(exhost --target)/lib
+        --with-pkgconfig
+        $(option_enable static allstatic)
+    )
+
+    [[ $(exhost --target) == *-gnu* ]] || \
+        args+=( $(option_enable static static-libc) )
+
+    econf "${args[@]}"
+}
+
+s6-rc_src_install()
+{
+    default
+
+    insinto /usr/share/doc/${PNVR}/html
+    doins doc/*
+
+    # dodoc doesn't preserve symlinks, the empty directories are there for a reason
+    edo cp -Pr examples "${IMAGE}"/usr/share/doc/${PNVR}
+    edo find "${IMAGE}"/usr/share/doc/${PNVR}/examples -type d -empty -exec touch "{}/.empty" \;
+
+    keepdir /usr/share/s6-rc/store
+    keepdir /etc/s6-rc/bootdb
+
+    insinto /usr/$(exhost --target)/libexec/s6-rc/scripts.legacy
+    insopts -m755
+    doins "${FILES}"/s6-service-manager/{rc.shutdown,runlevel}
+    newins "${FILES}"/s6-service-manager/rc.init.legacy rc.init
+
+    alternatives_for s6-service-manager ${PN} 1000 \
+        /usr/$(exhost --target)/libexec/s6-linux-init/scripts.default \
+        /usr/$(exhost --target)/libexec/s6-rc/scripts.legacy
+
+    insinto /usr/$(exhost --target)/libexec/s6-rc/scripts.repo
+    insopts -m755
+    doins "${FILES}"/s6-service-manager/{rc.shutdown,runlevel}
+    newins "${FILES}"/s6-service-manager/rc.init.repo rc.init
+
+    alternatives_for s6-service-manager ${PN}-repo 2000 \
+        /usr/$(exhost --target)/libexec/s6-linux-init/scripts.default \
+        /usr/$(exhost --target)/libexec/s6-rc/scripts.repo
+
+    if has_version "${CATEGORY}/${PN}[<0.7.0.0]"; then
+        ewarn "${CATEGORY}/${PN}-0.7.0.0 changed the database format."
+        ewarn "If your system is booted with the old version, compile your unchanged database"
+        ewarn "again and run s6-rc-format-upgrade with the new database as argument."
+    fi
+}
+
+s6-rc_pkg_postinst() {
+    local repo="${ROOT}"/var/lib/s6-rc/repository
+
+    if ! [ -d "${repo}" ]; then
+        nonfatal edo s6-rc-repo-init \
+            -r "${repo}" \
+            /usr/share/s6-rc/store \
+            /etc/s6-rc/store
+    else
+        nonfatal edo s6-rc-repo-sync \
+            -r "${repo}"
+    fi
+}
+

@@ -1,0 +1,70 @@
+# Copyright 2015-2019 Johannes Nixdorf <mixi@exherbo.org>
+# Copyright 2013 Michael Forney
+# Distributed under the terms of the GNU General Public License v2
+
+require flag-o-matic
+
+export_exlib_phases src_configure src_install
+
+SUMMARY="execline is a (non-interactive) scripting language"
+DESCRIPTION="
+execline is a (non-interactive) scripting language, like sh ; but its syntax is quite different from
+a traditional shell syntax. The execlineb program is meant to be used as an interpreter for a text
+file; the other commands are essentially useful inside an execlineb script.
+
+execline is now as powerful as a shell: it features conditional loops, getopt-style option handling,
+filename globbing, and more. Meanwhile, its syntax is far more logic and predictable than the
+shell's syntax, and has no security issues.
+"
+HOMEPAGE="http://skarnet.org/software/${PN}/"
+
+if ever is_scm; then
+    SCM_REPOSITORY="git://git.skarnet.org/execline"
+    SCM_BRANCH=main
+    require scm-git
+else
+    DOWNLOADS="http://skarnet.org/software/${PN}/${PNV}.tar.gz"
+fi
+
+LICENCES="ISC"
+SLOT="0"
+MYOPTIONS="
+    nsss [[ description = [ Use the nsss library for user database lookups ] ]]
+    static
+"
+
+DEPENDENCIES=""
+
+DEFAULT_SRC_COMPILE_PARAMS=(
+    CROSS_COMPILE=$(exhost --tool-prefix)
+)
+
+execline_src_configure()
+{
+    optionq nsss && append-flags -I/usr/$(exhost --target)/include/nsss
+
+    local args=(
+        --disable-rpath
+        --enable-pkgconfig
+        --enable-shared
+        --with-lib=/usr/$(exhost --target)/lib
+        --with-dynlib=/usr/$(exhost --target)/lib
+        --with-pkgconfig
+        $(option_enable nsss)
+        $(option_enable static allstatic)
+    )
+
+    [[ $(exhost --target) == *-gnu* ]] || \
+        args+=( $(option_enable static static-libc) )
+
+    econf "${args[@]}"
+}
+
+execline_src_install()
+{
+    default
+
+    insinto /usr/share/doc/${PNVR}/html
+    doins doc/*
+}
+

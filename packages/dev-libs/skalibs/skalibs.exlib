@@ -1,0 +1,61 @@
+# Copyright 2015-2019 Johannes Nixdorf <mixi@exherbo.org>
+# Copyright 2013 Michael Forney
+# Distributed under the terms of the GNU General Public License v2
+
+export_exlib_phases src_install
+
+SUMMARY="skalibs is a package containing general-purpose libraries"
+DESCRIPTION="
+skalibs is a package centralizing the free software / open source C development files used for
+building all software at skarnet.org: it contains essentially general-purpose libraries. You will
+need to install skalibs if you plan to build skarnet.org software. The point is that you won't have
+to download and compile big libraries everytime you need to build a package: do it only once.
+
+skalibs can also be used as a sound basic start for C development. There are a lot of
+general-purpose libraries out there; but if your main goal is to produce small and secure C code,
+you will like skalibs.
+"
+HOMEPAGE="http://skarnet.org/software/${PN}/"
+
+if ever is_scm; then
+    SCM_REPOSITORY="git://git.skarnet.org/${PN}"
+    SCM_BRANCH=main
+    require scm-git
+else
+    DOWNLOADS="http://skarnet.org/software/${PN}/${PNV}.tar.gz"
+fi
+
+LICENCES="ISC"
+SLOT="0"
+MYOPTIONS="
+    tai-clock [[ description = [ Used if the system clock is in TAI-10 (zoneinfo alternative set to leaps) ] ]]
+"
+
+DEPENDENCIES=""
+
+DEFAULT_SRC_CONFIGURE_PARAMS=(
+    --disable-rpath
+    --enable-pkgconfig
+    --with-default-path=/usr/host/bin:/usr/bin:/bin
+    --with-sysdep-devurandom=yes
+    --with-sysdep-posixspawnearlyreturn=no
+    --with-sysdep-procselfexe=/proc/self/exe
+    --with-sysdep-selectinfinite=yes
+)
+
+DEFAULT_SRC_CONFIGURE_OPTIONS=(
+    tai-clock
+)
+
+DEFAULT_SRC_COMPILE_PARAMS=(
+    CROSS_COMPILE=$(exhost --tool-prefix)
+)
+
+skalibs_src_install()
+{
+    default
+
+    insinto /usr/share/doc/${PNVR}/html
+    doins -r doc/*
+}
+

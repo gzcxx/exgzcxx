@@ -1,0 +1,5 @@
+#!/bin/sh -e
+
+s6-rc-init /run/service
+
+exec /usr/libexec/s6-linux-init/scripts/runlevel "${@}"

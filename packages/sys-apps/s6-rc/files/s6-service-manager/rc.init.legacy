@@ -1,0 +1,28 @@
+#!/bin/sh -e
+
+omount() {
+    type=${1}
+    opt=${2}
+    src=${3}
+    tgt=${4}
+
+    if mountpoint -q "${tgt}"; then
+        opt=remount,${opt}
+    fi
+
+    mount -t "${type}" -o "${opt}" "${src}" "${tgt}"
+}
+
+mkdir -p /dev/pts /dev/shm /run/lock
+
+omount devpts   nosuid,noexec,gid=5,mode=620    none /dev/pts
+omount tmpfs    nosuid,nodev                    none /dev/shm
+omount proc     nosuid,nodev,noexec             none /proc
+omount sysfs    nosuid,nodev,noexec             none /sys
+omount tmpfs    nosuid                          none /tmp
+
+mount -o remount,rw / /
+
+s6-rc-init -c /etc/s6-rc/compiled /run/service
+
+exec /usr/libexec/s6-linux-init/scripts/runlevel "${@}"

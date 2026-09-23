@@ -1,0 +1,17 @@
+# Copyright 2016-2018 Johannes Nixdorf <mixi@exherbo.org>
+# Distributed under the terms of the GNU General Public License v2
+
+require s6-linux-init
+
+PLATFORMS="~amd64 ~armv7 ~armv8"
+
+DEPENDENCIES="
+    build+run:
+        dev-libs/skalibs[>=2.15.1.0]
+    run:
+        dev-lang/execline[>=2.9.9.2]
+        sys-apps/s6[>=2.15.1.0]
+    recommendation:
+        sys-apps/s6-rc[>=0.6.0.0] [[ description = [ Provides a suitable service manager ] ]]
+"
+

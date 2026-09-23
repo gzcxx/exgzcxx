@@ -1,0 +1,4 @@
+#!/bin/sh -e
+
+exec /usr/host/bin/agetty -J 38400 tty1
+
