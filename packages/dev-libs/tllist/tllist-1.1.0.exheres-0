@@ -1,0 +1,28 @@
+# Copyright 2020 Danilo Spinella <danyspin97@protonmail.com>
+# Distributed under the terms of the GNU General Public License v2
+
+require meson [ meson_minimum_version=0.54.0 ]
+
+SUMMARY="A C header file only implementation of a typed linked list"
+HOMEPAGE="https://codeberg.org/dnkl/${PN}"
+DOWNLOADS="${HOMEPAGE}/archive/${PV}.tar.gz -> ${PNV}.tar.gz"
+
+LICENCES="MIT"
+SLOT="0"
+PLATFORMS="~amd64 ~armv8"
+MYOPTIONS=""
+
+DEPENDENCIES=""
+
+MESON_SOURCE="${WORKBASE}"/${PN}
+
+src_install() {
+    meson_src_install
+
+    edo mv \
+        "${IMAGE}"/usr/share/doc/${PN}/* \
+        "${IMAGE}"/usr/share/doc/${PNVR}/
+    edo rmdir \
+        "${IMAGE}"/usr/share/doc/${PN}
+}
+

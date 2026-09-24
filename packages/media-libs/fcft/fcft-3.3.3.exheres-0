@@ -1,0 +1,57 @@
+# Copyright 2020 Danilo Spinella <danyspin97@protonmail.com>
+# Distributed under the terms of the GNU General Public License v2
+
+require meson [ meson_minimum_version=0.58 ]
+
+SUMMARY="A simple library for font loading and glyph rasterization"
+HOMEPAGE="https://codeberg.org/dnkl/${PN}"
+DOWNLOADS="${HOMEPAGE}/archive/${PV}.tar.gz -> ${PNV}.tar.gz"
+
+LICENCES="MIT"
+SLOT="0"
+PLATFORMS="~amd64 ~armv8"
+
+MYOPTIONS="
+    harfbuzz
+"
+
+# NOTE:
+#   stdthreads is required & automagic for non-linux
+DEPENDENCIES="
+    build:
+        app-doc/scdoc
+        dev-lang/python:*[>=3]
+    build+run:
+        media-libs/fontconfig
+        media-libs/freetype:2
+        dev-libs/tllist[>=1.0.1]
+        x11-libs/pixman:1
+        harfbuzz? (
+            dev-libs/utf8proc:=
+            x11-libs/harfbuzz
+        )
+    test:
+        fonts/dejavu
+"
+
+MESON_SOURCE="${WORKBASE}"/${PN}
+
+MESON_SRC_CONFIGURE_PARAMS=(
+    -Ddocs=enabled
+    -Dsvg-backend=nanosvg # bundled
+)
+
+MESON_SRC_CONFIGURE_OPTION_FEATURES=(
+    'harfbuzz run-shaping'
+)
+
+src_install() {
+    meson_src_install
+
+    edo mv \
+        "${IMAGE}"/usr/share/doc/${PN}/* \
+        "${IMAGE}"/usr/share/doc/${PNVR}/
+    edo rmdir \
+        "${IMAGE}"/usr/share/doc/${PN}
+}
+
