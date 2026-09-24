@@ -1,0 +1,26 @@
+# Copyright 2016 Alexander Scheuermann <alex+exherbo@tnix.de>
+# Distributed under the terms of the GNU General Public License v2
+
+require cmake
+
+SUMMARY="C++ implementation of the Google logging
+module."
+HOMEPAGE="https://github.com/google/${PN}"
+DOWNLOADS="${HOMEPAGE}/archive/v${PV}.zip"
+
+LICENCES="BSD-3"
+SLOT="0"
+PLATFORMS="~amd64"
+MYOPTIONS=""
+
+DEPENDENCIES="
+    build+run:
+        dev-libs/libunwind
+    test:
+        dev-cpp/gtest
+"
+
+# Tests fail with invalid conversion from 'int' to
+# 'google::LogSeverity' [-fpermissive]
+RESTRICT="test"
+
