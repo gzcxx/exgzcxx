@@ -1,0 +1,39 @@
+# Copyright 2021 Johannes Nixdorf <mixi@exherbo.org>
+# Distributed under the terms of the GNU General Public License v2
+
+require meson [ meson_minimum_version=0.54 ] test-dbus-daemon
+
+SUMMARY="The sd-bus library, extracted from systemd."
+HOMEPAGE="https://git.sr.ht/~emersion/${PN}"
+DOWNLOADS="https://git.sr.ht/~emersion/${PN}/refs/download/v${PV}/${PNV}.tar.gz"
+
+LICENCES="LGPL-2.1"
+SLOT="0"
+PLATFORMS="~amd64 ~armv8"
+MYOPTIONS=""
+
+DEPENDENCIES=""
+
+MESON_SRC_CONFIGURE_PARAMS=(
+    -Daudit=disabled
+    -Dlibcap=disabled
+)
+
+machine_id_valid() {
+    for file in /etc/machine-id /var/lib/dbus/machine-id; do
+        [ -f ${file} ] || continue
+        [ -n "$(<${file})" ] || continue
+        return 0
+    done
+    return 1
+}
+
+src_test() {
+    if machine_id_valid; then
+        test-dbus-daemon_run-tests meson_src_test
+    else
+        ewarn "The tests require a valid, initialised /etc/machine-id or /var/lib/dbus/machine-id,"
+        ewarn "which you don't seem to have. Please run /usr/bin/systemd-machine-id-setup and"
+        ewarn "re-install ${PN} if you want to run the tests."
+    fi
+}
