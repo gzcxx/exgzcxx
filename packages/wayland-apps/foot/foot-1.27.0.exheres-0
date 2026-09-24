@@ -1,0 +1,59 @@
+# Copyright 2020 Danilo Spinella <danyspin97@protonmail.com>
+# Distributed under the terms of the GNU General Public License v2
+
+require meson [ meson_minimum_version=0.59.0 ]
+require systemd-service
+
+SUMMARY="A fast, lightweight and minimalistic Wayland terminal emulator"
+HOMEPAGE="https://codeberg.org/dnkl/${PN}"
+DOWNLOADS="${HOMEPAGE}/archive/${PV}.tar.gz -> ${PNV}.tar.gz"
+
+LICENCES="MIT"
+SLOT="0"
+PLATFORMS="~amd64 ~armv8"
+
+MYOPTIONS=""
+
+# NOTE:
+#   stdthreads, epoll-shim are required & automagic for non-linux
+DEPENDENCIES="
+    build:
+        app-doc/scdoc
+        dev-lang/python:*[>=3]
+    build+run:
+        dev-libs/tllist[>=1.1.0]
+        dev-libs/utf8proc:=
+        media-libs/fcft[>=3.3.1][<4.0.0]
+        media-libs/fontconfig
+        sys-libs/ncurses[>=6.3] [[ note = [ First version to include terminfo files for foot ] ]]
+        sys-libs/wayland
+        sys-libs/wayland-protocols[>=1.41]
+        x11-libs/libutempter
+        x11-libs/libxkbcommon[wayland][>=1.8.0]
+        x11-libs/pixman:1
+"
+
+MESON_SOURCE="${WORKBASE}"/${PN}
+
+MESON_SRC_CONFIGURE_PARAMS=(
+    -Ddocs=enabled
+    -Dgrapheme-clustering=enabled
+    -Dime=true
+    -Dsystemd-units-dir=${SYSTEMDUSERUNITDIR}
+    -Dterminfo=enabled
+    -Dutmp-backend=libutempter
+)
+
+src_install() {
+    meson_src_install
+
+    edo mv \
+        "${IMAGE}"/usr/share/doc/${PN}/* \
+        "${IMAGE}"/usr/share/doc/${PNVR}/
+    edo rmdir \
+        "${IMAGE}"/usr/share/doc/${PN}
+
+    # Remove terminfo files, ncurses already provides them
+    edo rm -fr "${IMAGE}"/usr/share/terminfo
+}
+
