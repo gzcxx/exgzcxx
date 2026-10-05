@@ -1,0 +1,19 @@
+require github [ user="RenderKit" tag=v${PV} ]
+require cmake
+
+SUMMARY="Collection of high-performance ray tracing kernels"
+HOMEPAGE="https://github.com/RenderKit/embree"
+LICENCES="Apache-2.0"
+SLOT="0"
+PLATFORMS="~amd64"
+
+MYOPTIONS="
+"
+
+DEPENDENCIES="
+    build+run:
+        media-libs/glfw
+"
+
+CMAKE_SRC_CONFIGURE_PARAMS+=(
+)
