@@ -1,0 +1,58 @@
+
+LLVM_SLOT=21
+
+require github [ user=ispc tag=v${PV} ]
+require cmake
+
+SUMMARY="Intel Implicit SPMD Program Compiler"
+HOMEPAGE+=" https://ispc.github.io"
+
+LICENCES="BSD-3"
+SLOT="0"
+PLATFORMS="~amd64"
+MYOPTIONS=""
+
+DEPENDENCIES="
+    build:
+        dev-lang/python:*
+        sys-devel/bison[>=3.0]
+        sys-devel/flex[>=2.6]
+        sys-devel/m4
+    build+run:
+        dev-lang/clang:${LLVM_SLOT}
+        dev-lang/llvm:${LLVM_SLOT}
+"
+
+LLVM_PREFIX=/usr/$(exhost --target)/lib/llvm/${LLVM_SLOT}
+
+CMAKE_SRC_CONFIGURE_PARAMS=(
+    -DCMAKE_BUILD_TYPE=Release
+
+    -DLLVM_DIR:PATH=${LLVM_PREFIX}
+    -DLLVM_CONFIG_EXECUTABLE:FILEPATH=${LLVM_PREFIX}/bin/llvm-config
+    -DCLANG_EXECUTABLE:FILEPATH=${LLVM_PREFIX}/bin/clang
+    -DCLANGPP_EXECUTABLE:FILEPATH=${LLVM_PREFIX}/bin/clang++
+
+    -DISPC_INCLUDE_EXAMPLES:BOOL=FALSE
+    -DISPC_INCLUDE_TESTS:BOOL=FALSE
+    -DISPC_INCLUDE_BENCHMARKS:BOOL=FALSE
+    -DISPC_INCLUDE_UTILS:BOOL=FALSE
+
+    -DISPC_NO_DUMPS:BOOL=TRUE
+    -DISPC_PREPARE_PACKAGE:BOOL=FALSE
+)
+
+src_prepare() {
+    export PATH="${LLVM_PREFIX}/bin:${PATH}"
+    cmake_src_prepare
+}
+
+src_configure() {
+    export PATH="${LLVM_PREFIX}/bin:${PATH}"
+    cmake_src_configure
+}
+
+src_compile() {
+    export PATH="${LLVM_PREFIX}/bin:${PATH}"
+    cmake_src_compile
+}

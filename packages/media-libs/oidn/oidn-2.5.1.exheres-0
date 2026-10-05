@@ -1,0 +1,22 @@
+require github [ user=RenderKit release=v${PV} pnv=${PNV}.src suffix=tar.gz ]
+WORK=${WORKBASE}/${PNV}
+require cmake
+
+SUMMARY="Intel® Open Image Denoise library"
+HOMEPAGE="https://github.com/RenderKit/oidn"
+LICENCES="Apache-2.0"
+SLOT="0"
+PLATFORMS="~amd64"
+
+MYOPTIONS="
+"
+
+DEPENDENCIES="
+    build+run:
+        dev-lang/python:*[>=3]
+        dev-lang/ispc
+"
+
+CMAKE_SRC_CONFIGURE_PARAMS+=(
+    -DCMAKE_BUILD_TYPE:STRING=Release
+)

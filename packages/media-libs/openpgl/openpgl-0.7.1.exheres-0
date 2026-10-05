@@ -1,0 +1,36 @@
+require github [ user=OpenPathGuidingLibrary tag=v${PV} ]
+require cmake
+
+SUMMARY="Intel Open Path Guiding Library"
+DESCRIPTION="
+Open PGL implements path guiding methods for Monte-Carlo path tracers. It
+learns an approximation of the light distribution in a scene and uses it to
+guide path sampling (used e.g. by Blender Cycles).
+"
+HOMEPAGE+=" https://www.openpgl.org"
+
+LICENCES="Apache-2.0"
+SLOT="0"
+PLATFORMS="~amd64"
+MYOPTIONS="
+    radiance-caches [[ description = [ Experimental: learn radiance caches in the guiding field (needed for guided Russian roulette) ] ]]
+    tools [[ description = [ Build openpgl_bench and openpgl_debug command line tools ] ]]
+"
+
+DEPENDENCIES="
+    build+run:
+        dev-libs/onetbb
+        media-libs/oidn
+"
+
+CMAKE_SRC_CONFIGURE_PARAMS=(
+    -DBUILD_SHARED_LIBS:BOOL=TRUE
+    -DOPENPGL_BUILD_STATIC:BOOL=FALSE
+    -DOPENPGL_TBB_ROOT:PATH=/usr/$(exhost --target)
+    -DOPENPGL_EF_IMAGE_SPACE_GUIDING_BUFFER:BOOL=TRUE
+)
+
+CMAKE_SRC_CONFIGURE_OPTIONS=(
+    'radiance-caches OPENPGL_EF_RADIANCE_CACHES'
+    'tools OPENPGL_BUILD_TOOLS'
+)

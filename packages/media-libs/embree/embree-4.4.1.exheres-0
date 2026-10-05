@@ -14,7 +14,6 @@ DEPENDENCIES="
     build+run:
         media-libs/glfw
 "
-
 CMAKE_SRC_CONFIGURE_PARAMS+=(
     -DCMAKE_BUILD_TYPE:STRING=Release
 )
